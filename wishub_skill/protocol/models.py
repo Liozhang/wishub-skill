@@ -40,7 +40,7 @@ class SkillInvokeRequest(BaseModel):
         le=300,
         description="超时时间（秒）"
     )
-    async: bool = Field(
+    is_async: bool = Field(
         default=False,
         description="是否异步执行"
     )

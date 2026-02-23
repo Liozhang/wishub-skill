@@ -94,7 +94,7 @@ async def invoke_skill(
         await db.commit()
 
         # 4. 执行 Skill
-        if request.async:
+        if request.is_async:
             # 异步执行
             logger.info(f"异步执行 Skill: {request.skill_id}")
             return SkillInvokeResponse(

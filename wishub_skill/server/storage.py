@@ -21,7 +21,8 @@ class StorageClient:
         access_key: Optional[str] = None,
         secret_key: Optional[str] = None,
         bucket_name: Optional[str] = None,
-        secure: Optional[bool] = None
+        secure: Optional[bool] = None,
+        lazy_init: bool = False
     ):
         """
         初始化 MinIO 客户端
@@ -32,6 +33,7 @@ class StorageClient:
             secret_key: 密钥
             bucket_name: 存储桶名称
             secure: 是否使用 HTTPS
+            lazy_init: 是否延迟初始化（用于测试）
         """
         self.endpoint = endpoint or settings.MINIO_ENDPOINT
         self.access_key = access_key or settings.MINIO_ACCESS_KEY
@@ -46,8 +48,9 @@ class StorageClient:
             secure=self.secure
         )
 
-        # 确保存储桶存在
-        self._ensure_bucket()
+        # 只有在非延迟初始化模式下才确保存储桶存在
+        if not lazy_init:
+            self._ensure_bucket()
 
     def _ensure_bucket(self):
         """确保存储桶存在"""
@@ -152,5 +155,5 @@ class StorageClient:
             logger.warning(f"代码删除失败: {e}")
 
 
-# 全局存储客户端实例
-storage_client = StorageClient()
+# 全局存储客户端实例（延迟初始化）
+storage_client = StorageClient(lazy_init=True)

@@ -17,7 +17,7 @@ async def test_invoke_skill_success(client: AsyncClient):
             "patient_age": 45
         },
         timeout=30,
-        async=False
+        is_async=False
     )
 
     response = await client.post(
@@ -37,7 +37,7 @@ async def test_invoke_skill_not_found(client: AsyncClient):
         skill_id="nonexistent_skill",
         inputs={"test": "value"},
         timeout=30,
-        async=False
+        is_async=False
     )
 
     response = await client.post(
@@ -56,7 +56,7 @@ async def test_invoke_skill_async(client: AsyncClient):
         skill_id="test_skill_001",
         inputs={"test": "value"},
         timeout=30,
-        async=True
+        is_async=True
     )
 
     response = await client.post(

@@ -38,7 +38,7 @@ def test_skill_invoke_request_valid():
     assert request.skill_id == "skill_custom"
     assert request.inputs == {"name": "test"}
     assert request.timeout == 30
-    assert request.async is False
+    assert request.is_async is False
 
 
 def test_skill_invoke_request_async():
@@ -47,11 +47,11 @@ def test_skill_invoke_request_async():
         skill_id="skill_custom",
         inputs={"name": "test"},
         timeout=60,
-        async=True
+        is_async=True
     )
 
     assert request.timeout == 60
-    assert request.async is True
+    assert request.is_async is True
 
 
 def test_skill_invoke_response_success():

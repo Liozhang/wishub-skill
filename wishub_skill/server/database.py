@@ -1,11 +1,45 @@
 """
 Skill Database Models - 性能优化版本
 """
-from sqlalchemy import Column, String, Integer, Float, Text, DateTime, ForeignKey, JSON, Index
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy import Column, String, Integer, Float, Text, DateTime, ForeignKey, JSON, Index, create_engine
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from typing import AsyncGenerator
+
+from wishub_skill.config import settings
 from datetime import datetime
 
 Base = declarative_base()
+
+# 异步引擎
+async_engine = create_async_engine(
+    settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
+    echo=settings.DEBUG,
+    future=True
+)
+
+# 异步会话工厂
+AsyncSessionLocal = async_sessionmaker(
+    async_engine,
+    class_=AsyncSession,
+    expire_on_commit=False
+)
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """获取数据库会话（依赖注入）"""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            try:
+                await session.commit()
+            except Exception:
+                # 如果事务已经回滚，忽略 commit 错误
+                pass
+            await session.close()
 
 
 class Skill(Base):

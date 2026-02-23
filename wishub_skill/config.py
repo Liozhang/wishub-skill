@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "wishub_skill"
     POSTGRES_POOL_SIZE: int = 20
 
+    @property
+    def DATABASE_URL(self) -> str:
+        """数据库连接 URL"""
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+
     # MinIO 配置
     MINIO_ENDPOINT: str = "localhost:9000"
     MINIO_ACCESS_KEY: str = "minioadmin"

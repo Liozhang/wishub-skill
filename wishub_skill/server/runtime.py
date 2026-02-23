@@ -7,11 +7,24 @@ import docker
 import asyncio
 import uuid
 from typing import Dict, Any, Optional
-from docker.errors import DockerException, ContainerError, ImageNotFound
+try:
+    from docker.errors import DockerException, ContainerError, ImageNotFound
+except ImportError:
+    # 新版本的 docker 库可能使用不同的异常类
+    class DockerException(Exception):
+        pass
+
+    class ContainerError(Exception):
+        pass
+
+    class ImageNotFound(Exception):
+        pass
+
 from pathlib import Path
 
 from wishub_skill.config import settings
-from wishub_skill.server.database import Skill, SkillLanguage
+from wishub_skill.server.database import Skill
+from wishub_skill.protocol.models import SkillLanguage
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +32,16 @@ logger = logging.getLogger(__name__)
 class RuntimeEngine:
     """Skill 运行时引擎 - Docker 沙箱"""
 
-    def __init__(self):
-        """初始化运行时引擎"""
-        self.client = docker.from_env()
+    def __init__(self, lazy_init: bool = False):
+        """
+        初始化运行时引擎
+
+        Args:
+            lazy_init: 是否延迟初始化（用于测试）
+        """
+        self.client = None
+        if not lazy_init:
+            self._init_client()
 
         # 语言特定的 Docker 镜像
         self.language_images = {
@@ -31,6 +51,11 @@ class RuntimeEngine:
             SkillLanguage.JAVA: "openjdk:21-slim",
             SkillLanguage.RUST: "rust:1.75-slim",
         }
+
+    def _init_client(self):
+        """初始化 Docker 客户端"""
+        if self.client is None:
+            self.client = docker.from_env()
 
     async def execute_skill(
         self,
@@ -255,5 +280,5 @@ class RuntimeEngine:
             return False
 
 
-# 全局运行时引擎实例
-runtime_engine = RuntimeEngine()
+# 全局运行时引擎实例（延迟初始化）
+runtime_engine = RuntimeEngine(lazy_init=True)

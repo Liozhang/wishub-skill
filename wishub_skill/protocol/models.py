@@ -298,3 +298,13 @@ class SkillOrchestrationResponse(BaseModel):
         default=None,
         description="错误信息"
     )
+
+
+class HealthCheckResponse(BaseModel):
+    """健康检查响应"""
+    status: str = Field(..., description="状态: healthy/unhealthy")
+    version: str = Field(..., description="版本号")
+    dependencies: Dict[str, str] = Field(
+        default_factory=dict,
+        description="依赖状态"
+    )

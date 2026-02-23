@@ -1,7 +1,7 @@
 """
-Skill Database Models
+Skill Database Models - 性能优化版本
 """
-from sqlalchemy import Column, String, Integer, Float, Text, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, String, Integer, Float, Text, DateTime, ForeignKey, JSON, Index
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
 
@@ -14,10 +14,10 @@ class Skill(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     skill_id = Column(String(255), unique=True, nullable=False, index=True)
-    skill_name = Column(String(255), nullable=False)
+    skill_name = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
     version = Column(String(50), nullable=False)
-    language = Column(String(50), nullable=False)
+    language = Column(String(50), nullable=False, index=True)
 
     # 代码存储
     code_url = Column(String(512), nullable=True)  # MinIO URL
@@ -31,9 +31,9 @@ class Skill(Base):
     timeout = Column(Integer, default=30)
 
     # 元数据
-    author = Column(String(255), nullable=True)
+    author = Column(String(255), nullable=True, index=True)
     license = Column(String(50), nullable=True)
-    category = Column(String(100), nullable=True)
+    category = Column(String(100), nullable=True, index=True)
 
     # 统计
     downloads = Column(Integer, default=0)
@@ -46,6 +46,13 @@ class Skill(Base):
     # 关系
     versions = relationship("SkillVersion", back_populates="skill", cascade="all, delete-orphan")
     executions = relationship("SkillExecution", back_populates="skill", cascade="all, delete-orphan")
+
+    # 性能优化：复合索引
+    __table_args__ = (
+        Index('idx_skill_language_category', 'language', 'category'),
+        Index('idx_skill_author_created', 'author', 'created_at'),
+        Index('idx_skill_downloads_rating', 'downloads', 'rating'),
+    )
 
 
 class SkillVersion(Base):
@@ -66,6 +73,11 @@ class SkillVersion(Base):
     # 关系
     skill = relationship("Skill", back_populates="versions")
 
+    # 性能优化：复合索引
+    __table_args__ = (
+        Index('idx_version_skill_created', 'skill_id', 'created_at'),
+    )
+
 
 class SkillExecution(Base):
     """Skill 执行记录"""
@@ -76,7 +88,7 @@ class SkillExecution(Base):
     skill_id = Column(String(255), ForeignKey("skills.skill_id"), nullable=False, index=True)
 
     # 执行状态
-    status = Column(String(50), default="pending")  # pending, running, success, error, timeout
+    status = Column(String(50), default="pending", index=True)  # pending, running, success, error, timeout
     inputs = Column(JSON, nullable=True)
     outputs = Column(JSON, nullable=True)
     error_message = Column(Text, nullable=True)
@@ -86,12 +98,18 @@ class SkillExecution(Base):
     container_id = Column(String(255), nullable=True)
 
     # 时间戳
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
 
     # 关系
     skill = relationship("Skill", back_populates="executions")
+
+    # 性能优化：复合索引
+    __table_args__ = (
+        Index('idx_execution_skill_status', 'skill_id', 'status'),
+        Index('idx_execution_status_created', 'status', 'created_at'),
+    )
 
 
 class Workflow(Base):
@@ -117,12 +135,18 @@ class WorkflowExecution(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     execution_id = Column(String(255), unique=True, nullable=False, index=True)
-    workflow_id = Column(String(255), nullable=False)
+    workflow_id = Column(String(255), nullable=False, index=True)
 
-    status = Column(String(50), default="running")  # running, success, error, timeout
+    status = Column(String(50), default="running", index=True)  # running, success, error, timeout
     results = Column(JSON, nullable=True)
     error_message = Column(Text, nullable=True)
 
     execution_time = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
+
+    # 性能优化：复合索引
+    __table_args__ = (
+        Index('idx_workflow_execution_status', 'workflow_id', 'status'),
+        Index('idx_workflow_status_created', 'status', 'created_at'),
+    )
